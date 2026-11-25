@@ -1,6 +1,7 @@
-# OldPhoneDeck
+# AgentDeck
 
-**Turn an old iPhone (or any iPhone or iPad) into a Stream Deck–style control panel for your Mac.**
+**Your AI agents, limits and pull requests on the phone on your desk, plus a Stream Deck–style control panel for your Mac.**
+AgentDeck is a fork of [OldPhoneDeck](https://github.com/GLAUCOMA82/OldPhoneDeck) by GLAUCOMA82: everything it does, plus an AI page.
 No jailbreak and no App Store: the deck runs in Safari, even on an iPhone 4S stuck on iOS 9.
 
 ![An iPhone 4S on a desk stand running OldPhoneDeck](docs/desk.jpg)
@@ -11,10 +12,9 @@ No jailbreak and no App Store: the deck runs in Safari, even on an iPhone 4S stu
 
 *Screenshots are from version 1; version 2 adds pages, widgets and the Command Center.*
 
-## This fork: an AI page
+## The AI page
 
-This is [eascend](https://eascend.co)'s fork of [GLAUCOMA82/OldPhoneDeck](https://github.com/GLAUCOMA82/OldPhoneDeck).
-It adds an **AI** page so the phone on your desk shows how your AI tools are doing:
+AgentDeck, by [eascend](https://eascend.co), adds an **AI** page so the phone on your desk shows how your AI tools are doing:
 
 | iPhone | iPad |
 |---|---|
@@ -71,8 +71,8 @@ Coming from version 1? See [Upgrading from version 1](#upgrading-from-version-1)
 ## Quick start
 
 ```bash
-git clone https://github.com/eascendco/OldPhoneDeck.git
-cd OldPhoneDeck
+git clone https://github.com/eascendco/AgentDeck.git
+cd AgentDeck
 ./make-app.sh
 open PhoneDeck.app
 ```
