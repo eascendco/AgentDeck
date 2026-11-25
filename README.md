@@ -41,7 +41,7 @@ widgets from the Command Center. Read-only: nothing on the phone can send anythi
 Also new in AgentDeck:
 
 - **Large app keys:** a third size next to Comfortable and Compact in the Command Center (6×2 on an iPhone, about 84 px icons, like OldPhoneDeck version 1).
-- **Edit pages on the phone:** hold the background to arrange, then **Rename page** or **Delete page** (tap twice to confirm). Fewer pages, less swiping.
+- **Edit pages on the phone:** hold the background to arrange, then **Add page**, **Rename page** or **Delete page** (tap twice to confirm). Fewer pages, less swiping.
 - **Apps in subfolders:** Setapp apps, Adobe, DaVinci Resolve and other apps one folder down in Applications show up in the app picker (uninstallers are skipped).
 - **More batteries:** Logitech, Keychron and other Bluetooth keyboards and mice that report a level.
 

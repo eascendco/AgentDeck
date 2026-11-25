@@ -1719,18 +1719,29 @@
     }
   };
 
-  // Page bar while arranging: rename or delete the current page, right from the phone.
+  // Page bar while arranging: add a page, or rename or delete the current one, right from the phone.
   // Delete asks first (a second tap within 3 s); the last page can't go.
   Deck.prototype.pageBar = function () {
     var self = this;
     if (q(this.root, '.pgbar') || this.opts.edit) return;
-    var bar = el('div', 'pgbar', '<span data-a="rename">Rename page</span><span data-a="del" class="red">Delete page</span>');
+    var bar = el('div', 'pgbar', '<span data-a="add">Add page</span><span data-a="rename">Rename page</span><span data-a="del" class="red">Delete page</span>');
     px(bar, { bottom: this.p.foot + (this.geo.dockH || 0) + 4 });
     this.root.appendChild(bar);
     var asking = 0;
     each(bar.querySelectorAll('span'), function (b) {
       onTap(b, function () {
         var pages = self.device().pages, pg = pages[self.page], a = b.getAttribute('data-a');
+        if (a === 'add') {   // a blank page right after this one; rename it from the same bar
+          var used = {}, n = 1;
+          each(pages, function (x) { used[x.name] = true; });
+          while (used['Page ' + n]) n++;
+          pages.splice(self.page + 1, 0, { id: uid(), name: 'Page ' + n, icon: 'sparkles', shortcut: '', items: [] });
+          self.page = self.page + 1;
+          store('page-' + self.kind, String(self.page));
+          self.commit();
+          self.toast('Page added: tap + to fill it');
+          return;
+        }
         if (!pg) return;
         if (a === 'rename') {
           var name = root.prompt ? root.prompt('Page name', pg.name || '') : null;
