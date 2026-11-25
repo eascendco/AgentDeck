@@ -87,13 +87,14 @@
 
   // ---------------------------------------------------------------- devices
   // stageH: logical height the deck is designed at (0 = native pixels). grid: [cols, rows] per density.
+  // large: fewer, bigger app keys (about 84 px icons on an iPhone, like OldPhoneDeck version 1).
   var PROFILES = PD.PROFILES = {
     classic: { name: 'iPhone 4S', stageH: 320, minW: 480, maxW: 480, header: 42, foot: 4, pad: 12, gap: 8, font: 13, dotsInHeader: true,
-               grid: { comfortable: [4, 3], compact: [5, 3] }, fx: false, tabs: false, dockH: 0, preview: [480, 320] },
+               grid: { large: [4, 2], comfortable: [4, 3], compact: [5, 3] }, fx: false, tabs: false, dockH: 0, preview: [480, 320] },
     phone:   { name: 'iPhone 17', stageH: 320, minW: 480, maxW: 760, header: 46, foot: 16, pad: 16, gap: 8, font: 13,
-               grid: { comfortable: [7, 3], compact: [8, 3] }, fx: true, tabs: true, dockH: 0, preview: [640, 320] },
+               grid: { large: [6, 2], comfortable: [7, 3], compact: [8, 3] }, fx: true, tabs: true, dockH: 0, preview: [640, 320] },
     tablet:  { name: 'iPad mini', stageH: 0, minW: 900, maxW: 4000, header: 62, foot: 20, pad: 24, gap: 14, font: 16,
-               grid: { comfortable: [6, 4], compact: [8, 4] }, fx: true, tabs: true, dockH: 104, preview: [1133, 744] }
+               grid: { large: [5, 3], comfortable: [6, 4], compact: [8, 4] }, fx: true, tabs: true, dockH: 104, preview: [1133, 744] }
   };
   PD.SIZES = { s: [2, 1], m: [2, 2], l: [4, 2], w: [4, 1], t: [2, 4] };   // Tall is clamped to the grid's height
   PD.SIZE_NAMES = { s: 'Small', m: 'Medium', l: 'Large', w: 'Bar', t: 'Tall' };
@@ -1516,7 +1517,7 @@
     } else {
       var labelH = this.device().labels === false || inDock ? 0 : 17;
       // cap = the visible squircle (macOS icon margins are cropped away), sized like iOS home-screen icons
-      var size = inDock ? box.width : Math.round(Math.min(Math.min(box.width * .78, box.height - labelH - 2) * .86, this.kind === 'tablet' ? 72 : 999));
+      var size = inDock ? box.width : Math.round(Math.min(Math.min(box.width * .78, box.height - labelH - 2) * .86, this.kind === 'tablet' ? (this.device().density === 'large' ? 112 : 72) : 999));
       var capTop = inDock ? 0 : Math.max(0, (box.height - size - labelH) / 2);
       node = el('div', 'key');
       if (!inDock) px(node, { left: box.left, top: box.top, width: box.width, height: box.height });
@@ -1713,13 +1714,49 @@
     this.theme();
     if (on) this.decorate();
     else {
-      each(this.root.querySelectorAll('.del, .rsz'), function (n) { n.parentNode.removeChild(n); });
+      each(this.root.querySelectorAll('.del, .rsz, .pgbar'), function (n) { n.parentNode.removeChild(n); });
       if (this.pendingReload && this.opts.reload) { this.pendingReload = false; this.opts.reload(); }
     }
   };
 
+  // Page bar while arranging: rename or delete the current page, right from the phone.
+  // Delete asks first (a second tap within 3 s); the last page can't go.
+  Deck.prototype.pageBar = function () {
+    var self = this;
+    if (q(this.root, '.pgbar') || this.opts.edit) return;
+    var bar = el('div', 'pgbar', '<span data-a="rename">Rename page</span><span data-a="del" class="red">Delete page</span>');
+    px(bar, { bottom: this.p.foot + (this.geo.dockH || 0) + 4 });
+    this.root.appendChild(bar);
+    var asking = 0;
+    each(bar.querySelectorAll('span'), function (b) {
+      onTap(b, function () {
+        var pages = self.device().pages, pg = pages[self.page], a = b.getAttribute('data-a');
+        if (!pg) return;
+        if (a === 'rename') {
+          var name = root.prompt ? root.prompt('Page name', pg.name || '') : null;
+          if (name === null) return;
+          name = name.replace(/^\s+|\s+$/g, '').slice(0, 24);
+          if (name && name !== pg.name) { pg.name = name; self.commit(); }
+          return;
+        }
+        if (pages.length < 2) { self.toast('Keep at least one page'); return; }
+        if (Date.now() > asking) {
+          asking = Date.now() + 3000; b.textContent = 'Delete “' + (pg.name || 'this page') + '”?';
+          setTimeout(function () { if (Date.now() >= asking) b.textContent = 'Delete page'; }, 3100);
+          return;
+        }
+        asking = 0;
+        pages.splice(self.page, 1);
+        self.page = Math.max(0, Math.min(self.page, pages.length - 1));
+        self.commit();
+        self.toast('Page deleted');
+      });
+    });
+  };
+
   // Delete badges (and a size button on widgets) on every item.
   Deck.prototype.decorate = function () {
+    this.pageBar();
     var self = this, nodes = [], pg = this.pages[this.page], dock = q(this.root, '.dock');
     if (pg) each(pg.el.querySelectorAll('[data-zone]'), function (n) { nodes.push(n); });
     if (dock) each(dock.querySelectorAll('[data-zone]'), function (n) { nodes.push(n); });

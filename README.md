@@ -38,6 +38,12 @@ Pull requests with new plugins are welcome.
 The three widgets work on every device size; new decks get an AI page, and existing ones can add the
 widgets from the Command Center. Read-only: nothing on the phone can send anything to your agents.
 
+Also new in AgentDeck:
+
+- **Large app keys:** a third size next to Comfortable and Compact in the Command Center (6×2 on an iPhone, about 84 px icons, like OldPhoneDeck version 1).
+- **Edit pages on the phone:** hold the background to arrange, then **Rename page** or **Delete page** (tap twice to confirm). Fewer pages, less swiping.
+- **More batteries:** Logitech, Keychron and other Bluetooth keyboards and mice that report a level.
+
 Ideas borrowed (no code copied): [PhoneBox](https://github.com/ersinkoc/phonebox) for the AI quotas,
 sessions and burn-rate idea; [jmalicki/herdr-mod-ai-usage](https://github.com/jmalicki/herdr-mod-ai-usage)
 for asking the `claude` CLI for its usage.

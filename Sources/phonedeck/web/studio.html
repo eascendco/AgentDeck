@@ -488,7 +488,7 @@ function renderPreview() {
   $('live').classList.toggle('on', st.ok && st.page === pageIdx);
   // device options
   const d = dev(), g = PD.PROFILES[kind].grid;
-  $('opts').innerHTML = `<div class="seg" id="dens"><button data-v="comfortable" class="${d.density === 'comfortable' ? 'on' : ''}">Comfortable ${g.comfortable.join('×')}</button><button data-v="compact" class="${d.density !== 'comfortable' ? 'on' : ''}">Compact ${g.compact.join('×')}</button></div>
+  $('opts').innerHTML = `<div class="seg" id="dens"><button data-v="large" class="${d.density === 'large' ? 'on' : ''}">Large ${g.large.join('×')}</button><button data-v="comfortable" class="${d.density === 'comfortable' ? 'on' : ''}">Comfortable ${g.comfortable.join('×')}</button><button data-v="compact" class="${d.density !== 'comfortable' && d.density !== 'large' ? 'on' : ''}">Compact ${g.compact.join('×')}</button></div>
     <span class="chk ${d.labels !== false ? 'on' : ''}" id="labels"><i></i>App names</span>
     <span class="chk ${d.dock.on ? 'on' : ''}" id="dock"><i></i>Dock</span>`;
   $('dens').querySelectorAll('button').forEach(b => b.onclick = () => change(() => { d.density = b.dataset.v; }));

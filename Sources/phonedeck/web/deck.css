@@ -608,3 +608,9 @@
 .pd .ast { font-size: .72em; color: var(--label2); padding-left: .95em; margin-top: .05em; }
 .pd .ghb { font-size: .62em; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: .12em .4em; border-radius: .5em; margin-left: .4em; -webkit-flex: none; flex: none; background: var(--fill); color: var(--label2); }
 .pd .ghb.approved { color: var(--green); } .pd .ghb.changes { color: var(--red); } .pd .ghb.review { color: var(--purple); }
+
+/* Page bar while arranging (hold the background): rename or delete the page */
+.pd .pgbar { position: absolute; left: 50%; z-index: 22; -webkit-transform: translateX(-50%); transform: translateX(-50%); display: -webkit-flex; display: flex;
+  padding: 4px; border-radius: 99em; background: var(--sheet); box-shadow: 0 4px 16px var(--shadow); white-space: nowrap; }
+.pd .pgbar span { padding: .5em 1em; border-radius: 99em; font-size: .85em; font-weight: 600; color: var(--label); cursor: pointer; }
+.pd .pgbar span.red { color: var(--red); }
