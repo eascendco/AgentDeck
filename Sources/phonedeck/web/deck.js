@@ -1370,6 +1370,13 @@
     var cls = 'pd pd-' + this.kind + (night ? ' night' : ' day') + ' wp-' + (L.wallpaper || 'aurora') +
       (this.p.fx && PD.modern ? ' fx' : '') + (L.glass === false ? ' noglass' : '') +
       (this.device().labels === false ? ' nolabels' : '') + (this.opts.edit ? ' edit' : '') + (this.arranging ? ' jiggle' : '');
+    // On a device the wallpaper is a full-screen layer behind the deck (it reaches past the notch and the
+    // home bar); the deck itself stays inside the safe area with a clear background.
+    if (this.wallLayer) {
+      var bcls = cls.replace(/ (jiggle|edit|nolabels)/g, '') + ' bleed';
+      if (this.wallLayer.className !== bcls) this.wallLayer.className = bcls;
+      cls += ' onbleed';
+    }
     if (this.root.className !== cls) this.root.className = cls;
     this.root.style.setProperty('--accent', L.accent || '#0091FF');
   };
@@ -2291,17 +2298,26 @@
     deck.opts.onPage = function (i) { PD.live.page = i; };
     var safe = el('div'); safe.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
     document.body.appendChild(safe);
+    var wallLayer = deck.wallLayer = el('div', 'pd bleed', '<div class="wall"></div><div class="blobs"><i></i><i></i><i></i></div>');
+    document.body.insertBefore(wallLayer, document.body.firstChild);   // themed by deck.theme() on each render
 
     // The deck is designed landscape-only. Phones: a 320pt-tall stage scaled to fit the safe area.
     // iPad: native pixels; a home-screen web app gets a viewport shorter than the screen, so use the screen.
     function fit() {
       var cs = root.getComputedStyle(safe), ins = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
-      var iw = root.innerWidth, ih = root.innerHeight;
-      if (kind === 'tablet') {
-        var standalone = navigator.standalone || (root.matchMedia && matchMedia('(display-mode: standalone)').matches);
-        var screenH = iw > ih ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height), gap = screenH - ih;
-        ih = standalone || (gap > 0 && gap <= 40) ? Math.max(ih, screenH) : ih;
+      var iw = root.innerWidth, ih = root.innerHeight, vw = iw, vh = ih;
+      // A Home Screen web app can be handed a viewport shorter than the screen (seen on iPads and on
+      // iPhones in landscape), which shrank the deck into a box. Use the screen instead. Phones and iPads.
+      var standalone = navigator.standalone || (root.matchMedia && matchMedia('(display-mode: standalone)').matches);
+      if (kind !== 'classic') {
+        var land = iw > ih, sLong = Math.max(screen.width, screen.height), sShort = Math.min(screen.width, screen.height);
+        var screenW = land ? sLong : sShort, screenH = land ? sShort : sLong, gap = screenH - ih;
+        if (standalone || (gap > 0 && gap <= 40)) ih = Math.max(ih, screenH);
+        if (standalone) iw = Math.max(iw, screenW);
       }
+      // iPhones in landscape report a 47 pt top inset as if the notch were up there; it's on the side
+      // (covered by the left/right insets), so the deck can use the top. Measured on an iPhone 12, iOS 18.
+      if (kind === 'phone' && iw > ih) ins.t = 0;
       var aw = iw - ins.l - ins.r, ah = ih - ins.t - ins.b, portrait = ah > aw;
       var W, H, s;
       if (portrait) { aw = ih - ins.t - ins.b; ah = iw - ins.l - ins.r; }
@@ -2314,6 +2330,10 @@
       r.style.left = ins.l + (aw - W * s) / 2 + 'px';
       r.style.top = ins.t + (ah - H * s) / 2 + 'px';
       if (deck.rotateEl) deck.rotateEl.style.display = portrait ? 'block' : 'none';
+      // One line per new size in the Mac's log, so a device that fits badly can be diagnosed.
+      var sig = [vw, vh, iw, ih, screen.width, screen.height, ins.t, ins.r, ins.b, ins.l, standalone ? 1 : 0].join(',');
+      if (sig !== fit.sig) { fit.sig = sig; PD.diag(kind, 'fit window ' + vw + 'x' + vh + ' used ' + iw + 'x' + ih + ' screen ' + screen.width + 'x' + screen.height +
+        ' insets ' + [ins.t, ins.r, ins.b, ins.l].join('/') + (standalone ? ' standalone' : ' browser') + ' stage ' + W + 'x' + H + ' scale ' + s.toFixed(3)); }
     }
     root.addEventListener('resize', function () { clearTimeout(fit.t); fit.t = setTimeout(fit, 60); });
     root.addEventListener('orientationchange', function () { setTimeout(fit, 300); });

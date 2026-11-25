@@ -614,3 +614,9 @@
   padding: 4px; border-radius: 99em; background: var(--sheet); box-shadow: 0 4px 16px var(--shadow); white-space: nowrap; }
 .pd .pgbar span { padding: .5em 1em; border-radius: 99em; font-size: .85em; font-weight: 600; color: var(--label); cursor: pointer; }
 .pd .pgbar span.red { color: var(--red); }
+
+/* Full-screen wallpaper on devices: a layer behind the deck that reaches the screen edges (past the notch
+   and the home bar). The deck stays in the safe area and lets it show through. */
+.pd.bleed { position: fixed; left: 0; top: 0; right: 0; bottom: 0; width: auto; height: auto; z-index: 0; -webkit-transform: none; transform: none; pointer-events: none; }
+.pd.onbleed { background: transparent; z-index: 1; }
+.pd.onbleed > .wall, .pd.onbleed > .blobs { display: none; }
