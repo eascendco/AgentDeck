@@ -12,7 +12,7 @@ let package = Package(
             dependencies: ["CGVirtualDisplayPrivate"],
             path: "Sources/phonedeck",
             exclude: ["Info.plist"],
-            resources: [.copy("web")],
+            resources: [.copy("web"), .copy("plugins")],
             linkerSettings: [
                 // Embed Info.plist so privacy prompts (Calendar) have usage text in a command-line tool.
                 .unsafeFlags(["-Xlinker", "-sectcreate", "-Xlinker", "__TEXT", "-Xlinker", "__info_plist",

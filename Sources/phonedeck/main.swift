@@ -159,6 +159,8 @@ var clients: [String: [String: Any]] = [:]   // deck kind → last seen, page; t
 // MARK: Routes
 
 let webRoot = Bundle.module.url(forResource: "web", withExtension: nil)!
+// AI page: plan limits, credits, agent sessions and GitHub, from the scripts in plugins/ (see AI.swift).
+let ai = AI(shippedDir: Bundle.module.url(forResource: "plugins", withExtension: nil) ?? webRoot.deletingLastPathComponent().appendingPathComponent("plugins"))
 
 let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
     // Static shell is public so the home-screen bookmark loads; everything else needs the token.
@@ -263,6 +265,11 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
             snap["agenda"] = agenda.snapshot()
         }
         conn.respondJSON(snap)
+    case ("GET", "/ai"):
+        conn.respondJSON(ai.snapshot())
+    case ("POST", "/ai/refresh"):
+        ai.refreshAll()
+        conn.respondJSON(["ok": true])
     case ("GET", "/projects"):
         DispatchQueue.global().async {
             let list = Projects.list()

@@ -582,3 +582,29 @@
    iPad Safari reloads the page when there are too many). */
 .pd .page.far { visibility: hidden; }
 .pd.fx .page.far .tile { -webkit-backdrop-filter: none; backdrop-filter: none; }
+
+/* ---------------- AI page: limits, sessions, GitHub ---------------- */
+.pd .w-aiquota { --tint: #D97757; } .pd .w-aisessions { --tint: var(--blue); } .pd .w-github { --tint: var(--label2); }
+.pd .tile .aiat { color: var(--label2); font-weight: 500; margin-left: .6em; }
+.pd .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pd .aql, .pd .asl, .pd .ghl { overflow: hidden; }
+.pd .aq { padding: .22em 0 .3em; }
+.pd .aql.row .aq { margin-right: .9em; } .pd .aql.row .aq:last-child { margin-right: 0; }
+.pd .aqn { font-size: .82em; font-weight: 600; }
+.pd .aq .num { font-size: .86em; font-weight: 700; margin-left: .4em; }
+.pd .aqb { height: .4em; border-radius: .2em; background: var(--label4); overflow: hidden; margin: .25em 0 .2em; }
+.pd .aqb i { display: block; height: 100%; border-radius: .2em; }
+.pd .aqs { font-size: .7em; color: var(--label2); }
+.pd .aqs.warn { color: var(--orange); font-weight: 600; }
+.pd .aq.stale { opacity: .6; }
+.pd .assum { font-size: .9em; font-weight: 600; margin-top: auto; } .pd .assum .num { font-size: 1.5em; margin-right: .15em; }
+.pd .asg { font-size: .66em; font-weight: 700; color: var(--label2); text-transform: uppercase; letter-spacing: .04em; margin: .45em 0 .1em; }
+.pd .asg:first-child { margin-top: 0; }
+.pd .asr, .pd .ghr { padding: .2em 0; cursor: pointer; }
+.pd .asr.asub { padding-left: .9em; }
+.pd .asd { width: .5em; height: .5em; border-radius: 50%; margin-right: .45em; -webkit-flex: none; flex: none; }
+.pd .asn { font-size: .84em; font-weight: 600; }
+.pd .asm { font-size: .68em; color: var(--label2); margin-left: .4em; -webkit-flex: none; flex: none; }
+.pd .ast { font-size: .72em; color: var(--label2); padding-left: .95em; margin-top: .05em; }
+.pd .ghb { font-size: .62em; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; padding: .12em .4em; border-radius: .5em; margin-left: .4em; -webkit-flex: none; flex: none; background: var(--fill); color: var(--label2); }
+.pd .ghb.approved { color: var(--green); } .pd .ghb.changes { color: var(--red); } .pd .ghb.review { color: var(--purple); }

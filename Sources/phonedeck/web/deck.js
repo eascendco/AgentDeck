@@ -116,6 +116,9 @@
     ink:           { label: 'Notes', g: 'note', tint: '#FFCC00', sizes: 'wmtl', desc: 'Write with Apple Pencil; it becomes a note in Apple Notes (handwriting read on the Mac).' },
     claude:        { label: 'Claude', g: 'claude', tint: '#D97757', sizes: 'wmtl', desc: 'Ask a question, take a note, or open a project in Claude Code.' },
     youtube:       { label: 'YouTube', g: 'youtube', tint: '#FF0033', sizes: 'swml', desc: 'Mirrors the video playing in Chrome or Safari; play, seek, volume and tabs.' },
+    aiquota:       { label: 'AI Limits', g: 'gauge', tint: '#D97757', sizes: 'swmtl', desc: 'Claude, Codex and other AI plan limits and credits, with when each resets and when you’d run out at this pace.' },
+    aisessions:    { label: 'AI Sessions', g: 'terminal', tint: '#0091FF', sizes: 'swmtl', desc: 'Claude Code, Codex, OpenCode and other agents running on the Mac: working, needs you or idle.' },
+    github:        { label: 'GitHub', g: 'code', tint: '#8B949E', sizes: 'swmtl', desc: 'Your open pull requests with CI and review state, and PRs waiting on your review.' },
     camera:        { label: 'Camera & Mic', g: 'camera', tint: '#8E8E93', sizes: 'ml', modern: true, desc: 'Use this phone as the Mac’s webcam and mic.' }
   };
 
@@ -268,7 +271,8 @@
           page('Work', 'briefcase', [w('calendar', 'm')].concat(work.slice(0, 9), [a('leftright'), a('fill')])),
           page('Music', 'headphones', [w('music', 'l')].concat(music.slice(0, 2), [a('prev'), a('playpause'), a('next'), a('voldown'), a('volup')])),
           page('Social', 'bubble', [w('notifications', 'm')].concat(fun.slice(0, 11))),
-          page('Mac', 'desktop', [w('controls', 'l'), w('mac', 'w')])
+          page('Mac', 'desktop', [w('controls', 'l'), w('mac', 'w')]),
+          page('AI', 'sparkles', [w('aiquota', 'm'), w('aisessions', 'm'), w('github', 'w')])
         ] },
         phone: { density: 'compact', labels: true, dock: { on: false, items: [] }, pages: [
           page('Home', 'house', [w('clock', 'm'), w('music', 'l')].concat(picked.slice(0, 4), [claude], picked.slice(4), [w('batteries', 's'), w('internet', 's')])),
@@ -276,14 +280,16 @@
           page('Music', 'headphones', [w('music', 'l'), w('controls', 'm')].concat(music.slice(0, 2), [a('prev'), a('playpause'), a('next'), a('voldown'), a('volup'), a('briup'), a('bridown')])),
           page('Social', 'bubble', [w('notifications', 'm')].concat(fun.slice(0, 18))),
           page('Camera', 'camera', [w('camera', 'l'), a('cam'), a('mic'), a('micmute'), a('screenshot'), claude, a('dark'), a('focus'), a('awake')]),
-          page('Mac', 'desktop', [w('controls', 'l'), w('mac', 'm'), w('batteries', 's'), w('internet', 's'), a('sleep'), a('speedtest'), a('dark'), a('awake')])
+          page('Mac', 'desktop', [w('controls', 'l'), w('mac', 'm'), w('batteries', 's'), w('internet', 's'), a('sleep'), a('speedtest'), a('dark'), a('awake')]),
+          page('AI', 'sparkles', [w('aisessions', 'l'), w('aiquota', 'l'), w('github', 'w'), claude])
         ] },
         tablet: { density: 'compact', labels: true, dock: { on: true, items: picked.concat([claude, a('cam'), a('mic')]) }, pages: [
           page('Home', 'house', [w('clock', 'l'), w('music', 'l'), w('calendar', 'm'), w('mac', 'm'), w('controls', 'm'), w('internet', 's'), w('batteries', 's')]),
           page('Work', 'briefcase', [w('calendar', 'l'), w('notifications', 'l'), w('timer', 'm')].concat(work.slice(0, 12), [a('leftright'), a('fill')])),
           page('Music', 'headphones', [w('music', 'l'), w('controls', 'l')].concat(music.slice(0, 4), [a('prev'), a('playpause'), a('next'), a('voldown'), a('volup'), a('briup'), a('bridown'), a('dark')])),
           page('Social', 'bubble', [w('notifications', 'l'), w('weather', 'm'), w('clock', 'm')].concat(fun.slice(0, 16))),
-          page('Mac', 'desktop', [w('mac', 'l'), w('controls', 'l'), w('bluetooth', 'l'), w('internet', 'm'), w('batteries', 'm')])
+          page('Mac', 'desktop', [w('mac', 'l'), w('controls', 'l'), w('bluetooth', 'l'), w('internet', 'm'), w('batteries', 'm')]),
+          page('AI', 'sparkles', [w('aisessions', 'l'), w('aiquota', 'l'), w('github', 'l'), w('notifications', 'l')])
         ] }
       }
     };
@@ -1129,6 +1135,206 @@
     });
     fetch();
     return { update: fetch };
+  };
+
+  // ---------------------------------------------------------------- AI page
+  // One /ai request feeds every AI widget, every 8 s while one is on screen. The Mac runs the
+  // plugins (AI.swift, plugins/) only while a deck keeps asking.
+  var AIS = { data: null, ver: 0, at: 0, busy: false, sample: null };
+  function aiPoll(edit) {
+    if (edit) return AIS.sample || (AIS.sample = aiSample());
+    if (!AIS.busy && Date.now() - AIS.at > 8000) {
+      AIS.busy = true; AIS.at = Date.now();
+      api.json('/ai', '', function (j) {
+        AIS.busy = false;
+        if (j) { AIS.data = j; AIS.ver++; if (j.loading) AIS.at = Date.now() - 6500; }
+      });
+    }
+    return AIS.data;
+  }
+  function aiSample() {   // what the Command Center preview shows
+    var h = 3600000, now = Date.now();
+    return {
+      quotas: [
+        { id: 'claude', name: 'Claude', type: 'quota', color: '#D97757', windows: [{ label: '5 h', used: 64, resetsAt: now + 2.2 * h, fullIn: 4300 }, { label: 'Week', used: 31, resetsAt: now + 98 * h }] },
+        { id: 'codex', name: 'Codex', type: 'quota', color: '#10A37F', windows: [{ label: '5 h', used: 12, resetsAt: now + 4 * h }] },
+        { id: 'openrouter', name: 'OpenRouter', type: 'credits', color: '#6467F2', credits: { left: 100.87, total: 138.51, unit: '$' } }
+      ],
+      sessions: [
+        { group: 'my-app', name: 'Claude Code', task: 'Fix the login redirect', status: 'waiting', model: 'Opus 5.5', tokens: 182000 },
+        { group: 'my-app', name: 'Codex', task: 'Codex in my-app', status: 'running' },
+        { group: 'website', name: 'Claude Code', task: 'Write the pricing page', status: 'working', model: 'Sonnet 5.5', tokens: 64000 },
+        { group: 'website', name: 'Claude Code', task: 'Update dependencies', status: 'idle', model: 'Haiku 5.5', tokens: 21000 }
+      ],
+      github: { prs: [{ repo: 'me/my-app', number: 42, title: 'Login redirect fix', ci: 'pass', review: 'approved' },
+                      { repo: 'me/website', number: 7, title: 'Pricing page', ci: 'running', review: 'waiting' }], reviews: [] }
+    };
+  }
+  function dur(sec) {
+    sec = Math.max(0, Math.round(sec)); var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60);
+    return d ? d + ' d' + (h ? ' ' + h + ' h' : '') : h ? h + ' h' + (m ? ' ' + m + ' min' : '') : Math.max(1, m) + ' min';
+  }
+  function kNum(n) { return n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'K' : String(n); }
+  function money(v, unit) { return unit === '$' ? '$' + (v >= 1000 ? Math.round(v) : v.toFixed(2)) : kNum(Math.round(v)) + (unit ? ' ' + unit : ''); }
+  // One row per limit window or balance: { name, pct, bar color, value text, sub text, warn }
+  function aiRows(d) {
+    var out = [], now = Date.now();
+    each((d && d.quotas) || [], function (q) {
+      each(q.windows || [], function (w) {
+        var pct = Math.round(w.used || 0), warn = w.full || w.fullIn !== undefined;
+        var sub = w.full ? 'limit reached' + (w.resetsAt ? ' · back in ' + dur((w.resetsAt - now) / 1000) : '')
+          : (w.resetsAt ? 'resets in ' + dur((w.resetsAt - now) / 1000) : '') + (w.fullIn !== undefined ? ' · at this pace full in ' + dur(w.fullIn) : '');
+        out.push({ name: q.name + (q.windows.length > 1 || w.label !== '5 h' ? ' · ' + w.label : ''), short: q.name, pct: pct,
+                   color: w.full ? 'var(--red)' : warn ? 'var(--orange)' : q.color || 'var(--accent)', value: pct + '%', sub: sub, warn: warn, stale: q.stale });
+      });
+      var c = q.credits;
+      if (c && c.left !== undefined) {
+        var pctLeft = c.total ? Math.round(100 * c.left / c.total) : null;
+        out.push({ name: q.name, short: q.name, pct: pctLeft === null ? null : 100 - pctLeft, credit: true, color: pctLeft !== null && pctLeft < 10 ? 'var(--orange)' : q.color || 'var(--accent)',
+                   value: money(c.left, c.unit), sub: (c.total ? 'left of ' + money(c.total, c.unit) : 'left') + (c.resetsAt ? ' · renews in ' + dur((c.resetsAt - now) / 1000) : ''),
+                   warn: pctLeft !== null && pctLeft < 10, stale: q.stale });
+      }
+    });
+    return out;
+  }
+  // Removes the rows that don't fit the widget (measured after drawing), then any heading left
+  // with no rows under it. Returns how many rows went.
+  function fitList(list) {
+    var box = list.getBoundingClientRect(), gone = 0;
+    if (!box.height) return 0;
+    while (list.lastChild && list.lastChild.getBoundingClientRect().bottom > box.bottom + 1) {
+      if ((list.lastChild.className || '').indexOf('asg') < 0) gone++;
+      list.removeChild(list.lastChild);
+    }
+    while (list.lastChild && (list.lastChild.className || '').indexOf('asg') >= 0) list.removeChild(list.lastChild);
+    return gone;
+  }
+  function aiBar(r) { return '<div class="aqb"><i style="width:' + (r.pct === null ? 100 : Math.max(2, r.credit ? 100 - r.pct : r.pct)) + '%;background:' + r.color + '"></i></div>'; }
+
+  W.aiquota = function (e, s, ctx) {
+    var small = s === 's' || s === 'w', key = '';
+    e.innerHTML = (small ? '' : '<div class="row" style="-webkit-flex:none;flex:none"><h3 class="grow">AI Limits</h3><h3 class="aiat"></h3></div>') + '<div class="aql grow' + (s === 'w' ? ' row' : '') + '"></div>';
+    var list = q(e, '.aql'), n = s === 's' ? 1 : s === 'w' ? 3 : 99;
+    if (!ctx.edit) tap(e, function () { api.post('/ai/refresh', {}); AIS.at = Date.now() - 5000; if (deckToast) deckToast('Refreshing AI limits…'); });
+    function paint(d) {
+      if (!d) { list.innerHTML = '<div class="empty">Loading AI limits…</div>'; return; }
+      var all = aiRows(d);
+      if (!all.length) {
+        list.innerHTML = '<div class="empty">' + (d.loading ? 'Checking your AI tools…' : 'No AI tools found. Sign in to Claude Code or Codex, or add a plugin.') + '</div>';
+        return;
+      }
+      // Warnings first when space is short, then the original order.
+      var shown = all.length <= n ? all : all.filter(function (r) { return r.warn; }).concat(all.filter(function (r) { return !r.warn; })).slice(0, n);
+      list.innerHTML = shown.map(function (r) {
+        if (s === 's') return '<div class="aq"><div class="row"><span class="aqn grow ell">' + esc(r.short) + '</span><b class="num">' + esc(r.value) + '</b></div>' + aiBar(r) + '<div class="aqs ell">' + esc(r.sub) + '</div></div>';
+        if (s === 'w') return '<div class="aq grow"><div class="row"><span class="aqn grow ell">' + esc(r.short) + '</span><b class="num">' + esc(r.value) + '</b></div>' + aiBar(r) + '</div>';
+        return '<div class="aq' + (r.stale ? ' stale' : '') + '"><div class="row"><span class="aqn grow ell">' + esc(r.name) + '</span><b class="num">' + esc(r.value) + '</b></div>' + aiBar(r) +
+          '<div class="aqs ell' + (r.warn ? ' warn' : '') + '">' + esc(r.sub) + '</div></div>';
+      }).join('');
+      var more = all.length - shown.length + (small ? 0 : fitList(list));
+      var at = q(e, '.aiat'); if (at) at.textContent = more ? '+' + more + ' more' : '';
+    }
+    function update() {
+      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver) + ':' + Math.floor(Date.now() / 30000);
+      if (k === key) return; key = k; paint(d);
+    }
+    update();
+    return { update: update };
+  };
+
+  var AI_STATUS = { waiting: ['Needs you', 'var(--orange)'], working: ['Working', 'var(--blue)'], running: ['Running', 'var(--teal)'], done: ['Done', 'var(--green)'], idle: ['Idle', 'var(--label3)'] };
+  function aiCounts(list) {
+    var c = {}, parts = [];
+    each(list, function (x) { c[x.status] = (c[x.status] || 0) + 1; });
+    each(['waiting', 'working', 'running', 'done', 'idle'], function (k) { if (c[k]) parts.push(c[k] + ' ' + (k === 'waiting' ? 'need you' : AI_STATUS[k][0].toLowerCase())); });
+    return parts;
+  }
+  W.aisessions = function (e, s, ctx) {
+    var small = s === 's' || s === 'w', key = '', open = {};
+    e.innerHTML = (small ? '' : '<div class="row" style="-webkit-flex:none;flex:none"><h3 class="grow">AI Sessions</h3><h3 class="aiat"></h3></div>') + '<div class="asl grow"></div>';
+    var list = q(e, '.asl'), room = ctx.h / ctx.fs;   // in em; fitList trims what still overflows
+    if (!ctx.edit) list.addEventListener('click', function (ev) {
+      var r = closest(ev.target, 'data-sid', list); if (!r) return;
+      var id = r.getAttribute('data-sid'); open[id] = !open[id]; key = ''; update();
+    });
+    function paint(d) {
+      var all = (d && d.sessions) || [];
+      if (!d) { list.innerHTML = '<div class="empty">Loading sessions…</div>'; return; }
+      var counts = aiCounts(all);
+      if (small) {
+        list.innerHTML = all.length ? '<div class="assum"><b class="num">' + all.length + '</b> AI session' + (all.length === 1 ? '' : 's') + '</div><div class="aqs ell">' + esc(counts.join(' · ')) + '</div>'
+          : '<div class="empty">No AI sessions running</div>';
+        return;
+      }
+      var at = q(e, '.aiat'); if (at) at.textContent = counts.slice(0, 2).join(' · ');
+      if (!all.length) { list.innerHTML = '<div class="empty">No AI sessions running. Start Claude Code, Codex or OpenCode on the Mac.</div>'; return; }
+      // Busy sessions first when space is short; idle ones fill what's left. Then grouped by project or space.
+      var rank = { waiting: 0, working: 1, running: 2, done: 3, idle: 4 }, pick = all.slice();
+      pick.sort(function (a, b) { return (rank[a.status] === undefined ? 5 : rank[a.status]) - (rank[b.status] === undefined ? 5 : rank[b.status]); });
+      // Heights in em: a group heading 1.2, a session 1.25 plus 1.05 for its task line, details 1.1.
+      var budget = room, chosen = [], groups = {}, order = [];
+      each(pick, function (x) {
+        var g = x.group || 'This Mac', cost = (groups[g] ? 0 : 1.2) + 1.25 + (x.task ? 1.05 : 0) + (open[x.id || x.name] ? 1.1 : 0);
+        if (budget < cost) return;
+        budget -= cost; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(x); chosen.push(x);
+      });
+      var html = '';
+      // Groups follow their busiest session (pick is sorted by status), so trimming drops idle ones first.
+      each(order, function (g) {
+        html += '<div class="asg ell">' + esc(g) + '</div>';
+        each(groups[g], function (x) {
+          var st = AI_STATUS[x.status] || [x.status || '', 'var(--label3)'], id = x.id || x.name;
+          var meta = [x.model, x.tokens ? kNum(x.tokens) + ' ctx' : ''].filter(function (v) { return v; }).join(' · ');
+          html += '<div class="asr' + (x.sub ? ' asub' : '') + '" data-sid="' + esc(id) + '"><div class="row"><i class="asd" style="background:' + st[1] + '"></i>' +
+            '<span class="asn ell grow">' + esc(x.name) + '</span><span class="asm">' + esc(x.status === 'idle' || x.status === 'running' ? meta : st[0]) + '</span></div>' +
+            (x.task ? '<div class="ast ell">' + esc(x.task) + '</div>' : '') +
+            (open[id] ? '<div class="ast">' + esc([x.app, meta, x.cwd].filter(function (v) { return v; }).join(' · ')) + '</div>' : '') + '</div>';
+        });
+      });
+      list.innerHTML = html;
+      fitList(list);
+    }
+    function update() {
+      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver);
+      if (k === key) return; key = k; paint(d);
+    }
+    update();
+    return { update: update };
+  };
+
+  W.github = function (e, s, ctx) {
+    var small = s === 's' || s === 'w', key = '';
+    e.innerHTML = (small ? '' : '<div class="row" style="-webkit-flex:none;flex:none"><h3 class="grow">GitHub</h3><h3 class="aiat"></h3></div>') + '<div class="ghl grow"></div>';
+    var list = q(e, '.ghl'), n = small ? 1 : 20;
+    var CI = { pass: 'var(--green)', fail: 'var(--red)', running: 'var(--orange)', none: 'var(--label3)' };
+    function paint(d) {
+      var g = d && d.github;
+      if (!d) { list.innerHTML = '<div class="empty">Loading GitHub…</div>'; return; }
+      if (!g) { list.innerHTML = '<div class="empty">Install the GitHub CLI and run gh auth login on the Mac.</div>'; return; }
+      if (g.error) { list.innerHTML = '<div class="empty">' + esc(g.error) + '</div>'; return; }
+      var prs = g.prs || [], rev = g.reviews || [], fails = prs.filter(function (p) { return p.ci === 'fail'; }).length;
+      var sum = prs.length + ' open PR' + (prs.length === 1 ? '' : 's') + (rev.length ? ' · ' + rev.length + ' to review' : '') + (fails ? ' · ' + fails + ' failing' : '');
+      var at = q(e, '.aiat'); if (at) at.textContent = small ? '' : sum;
+      if (small) {
+        var line = rev.length || fails ? sum.replace(/^[^·]*· /, '') : prs[0] ? prs[0].repo + ' #' + prs[0].number + ' · ' + prs[0].title : 'Nothing open';
+        list.innerHTML = '<div class="assum"><b class="num">' + prs.length + '</b> open PR' + (prs.length === 1 ? '' : 's') + '</div><div class="aqs ell' + (fails ? ' warn' : '') + '">' + esc(line) + '</div>';
+        return;
+      }
+      var items = rev.map(function (p) { var c = clone(p); c.toReview = true; return c; }).concat(prs).slice(0, n);
+      list.innerHTML = items.length ? items.map(function (p) {
+        var badge = p.toReview ? 'review' : p.review === 'approved' ? 'approved' : p.review === 'changes' ? 'changes' : p.draft ? 'draft' : '';
+        return '<div class="ghr"><div class="row"><i class="asd" style="background:' + (p.toReview ? 'var(--purple)' : CI[p.ci] || CI.none) + '"></i>' +
+          '<span class="asn ell grow">' + esc(p.title) + '</span>' + (badge ? '<span class="ghb ' + badge + '">' + badge + '</span>' : '') + '</div>' +
+          '<div class="ast ell">' + esc(p.repo + ' #' + p.number) + (p.ci && p.ci !== 'none' && !p.toReview ? ' · CI ' + p.ci : '') + '</div></div>';
+      }).join('') : '<div class="empty">No open pull requests</div>';
+      fitList(list);
+    }
+    function update() {
+      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver);
+      if (k === key) return; key = k; paint(d);
+    }
+    update();
+    return { update: update };
   };
 
   PD.W = W;

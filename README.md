@@ -11,6 +11,30 @@ No jailbreak and no App Store: the deck runs in Safari, even on an iPhone 4S stu
 
 *Screenshots are from version 1; version 2 adds pages, widgets and the Command Center.*
 
+## This fork: an AI page
+
+This is [eascend](https://eascend.co)'s fork of [GLAUCOMA82/OldPhoneDeck](https://github.com/GLAUCOMA82/OldPhoneDeck).
+It adds an **AI** page so the phone on your desk shows how your AI tools are doing:
+
+- **AI Limits:** Claude and Codex 5-hour and weekly limits with reset times and "at this pace full in 1 h 10 min",
+  plus credit balances (OpenRouter, fal, ElevenLabs).
+- **AI Sessions:** the Claude Code, Codex, OpenCode, Gemini CLI and other agents running on the Mac, grouped by
+  project: working, needs you or idle, with model, context size and last prompt. Tap one for details.
+  [Herdr](https://herdr.dev) users see their spaces and tab names.
+- **GitHub:** your open pull requests with CI and review state, and PRs waiting on your review.
+
+Every source is a small plugin script, so **adding the AI you use is one file**: copy
+`Sources/phonedeck/plugins/_template.py` to `~/.phonedeck/plugins/`, fill it in, done. No rebuild.
+The format, the shipped plugins and how keys are stored are in [plugins/README.md](Sources/phonedeck/plugins/README.md).
+Pull requests with new plugins are welcome.
+
+The three widgets work on every device size; new decks get an AI page, and existing ones can add the
+widgets from the Command Center. Read-only: nothing on the phone can send anything to your agents.
+
+Ideas borrowed (no code copied): [PhoneBox](https://github.com/ersinkoc/phonebox) for the AI quotas,
+sessions and burn-rate idea; [jmalicki/herdr-mod-ai-usage](https://github.com/jmalicki/herdr-mod-ai-usage)
+for asking the `claude` CLI for its usage.
+
 ## What's new in version 2
 
 The Mac side is now **PhoneDeck.app**, a menu bar app with a **Command Center** window where you design each deck:
@@ -40,7 +64,7 @@ Coming from version 1? See [Upgrading from version 1](#upgrading-from-version-1)
 ## Quick start
 
 ```bash
-git clone https://github.com/GLAUCOMA82/OldPhoneDeck.git
+git clone https://github.com/eascendco/OldPhoneDeck.git
 cd OldPhoneDeck
 ./make-app.sh
 open PhoneDeck.app
@@ -115,6 +139,7 @@ iPhone / iPad (Safari, or PhoneCam on a 4S)     Mac: PhoneDeck.app (Swift, no de
 | USB cable | `USBTunnel.swift` keeps usbmuxd connections open to PhoneCam (port 27045 on the phone), which pipes its web view and camera through them. `PHONEDECK_USB_DEBUG=1` logs connection attempts |
 | Webcam | `/camera.mjpg` for an OBS Media Source; the mic plays into BlackHole |
 | Security | Every API call needs the random code in `~/.phonedeck/token`. Delete that file to rotate it |
+| AI page | `AI.swift` runs the scripts in `plugins/` and `~/.phonedeck/plugins/` while a deck shows the page; `/ai` returns the result |
 
 ## Limits on the iPhone 4S (iOS 9 / A5)
 
