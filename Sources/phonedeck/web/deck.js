@@ -1235,7 +1235,7 @@
       var at = q(e, '.aiat'); if (at) at.textContent = more ? '+' + more + ' more' : '';
     }
     function update() {
-      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver) + ':' + Math.floor(Date.now() / 30000);
+      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver) + ':' + Math.floor(Date.now() / 30000) + ':' + list.clientHeight;
       if (k === key) return; key = k; paint(d);
     }
     update();
@@ -1295,7 +1295,7 @@
       fitList(list);
     }
     function update() {
-      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver);
+      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver) + ':' + list.clientHeight;   // redraw when the widget's size settles
       if (k === key) return; key = k; paint(d);
     }
     update();
@@ -1330,7 +1330,7 @@
       fitList(list);
     }
     function update() {
-      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver);
+      var d = aiPoll(ctx.edit), k = (ctx.edit ? 'e' : AIS.ver) + ':' + list.clientHeight;   // redraw when the widget's size settles
       if (k === key) return; key = k; paint(d);
     }
     update();

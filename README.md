@@ -16,6 +16,13 @@ No jailbreak and no App Store: the deck runs in Safari, even on an iPhone 4S stu
 This is [eascend](https://eascend.co)'s fork of [GLAUCOMA82/OldPhoneDeck](https://github.com/GLAUCOMA82/OldPhoneDeck).
 It adds an **AI** page so the phone on your desk shows how your AI tools are doing:
 
+| iPhone | iPad |
+|---|---|
+| ![The AI page on an iPhone](docs/ai-iphone.png) | ![The AI page on an iPad](docs/ai-ipad.png) |
+
+*Demo data.*
+
+
 - **AI Limits:** Claude and Codex 5-hour and weekly limits with reset times and "at this pace full in 1 h 10 min",
   plus credit balances (OpenRouter, fal, ElevenLabs).
 - **AI Sessions:** the Claude Code, Codex, OpenCode, Gemini CLI and other agents running on the Mac, grouped by
