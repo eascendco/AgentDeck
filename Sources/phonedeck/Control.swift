@@ -81,15 +81,24 @@ enum Apps {
 
     static func list() -> [[String: String]] {
         let fm = FileManager.default
-        let dirs = ["/Applications", "/Applications/Utilities", "/System/Applications",
-                    "/System/Applications/Utilities", NSHomeDirectory() + "/Applications"]
+        let roots = ["/Applications", "/System/Applications", NSHomeDirectory() + "/Applications"]
         var seen = Set<String>()
         var out: [[String: String]] = []
-        for dir in dirs {
-            for item in (try? fm.contentsOfDirectory(atPath: dir)) ?? [] where item.hasSuffix(".app") {
-                let name = String(item.dropLast(4))
-                guard seen.insert(name).inserted else { continue }
-                out.append(["name": name, "path": dir + "/" + item])
+        func add(_ dir: String, _ item: String) {
+            let name = String(item.dropLast(4))
+            guard !name.hasPrefix("Uninstall"), seen.insert(name).inserted else { return }
+            out.append(["name": name, "path": dir + "/" + item])
+        }
+        // Each folder plus one level of plain subfolders: Utilities, Setapp, "Adobe Photoshop 2026",
+        // "DaVinci Resolve" and the like. Uninstallers are left out.
+        for root in roots {
+            let items = (try? fm.contentsOfDirectory(atPath: root)) ?? []
+            for item in items where item.hasSuffix(".app") { add(root, item) }
+            for item in items where !item.hasSuffix(".app") && !item.hasPrefix(".") {
+                let sub = root + "/" + item
+                var isDir: ObjCBool = false
+                guard fm.fileExists(atPath: sub, isDirectory: &isDir), isDir.boolValue else { continue }
+                for inner in (try? fm.contentsOfDirectory(atPath: sub)) ?? [] where inner.hasSuffix(".app") { add(sub, inner) }
             }
         }
         // Finder lives outside the app folders, in CoreServices.
