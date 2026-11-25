@@ -119,14 +119,41 @@ final class Stats {
             }
         }
 
+        // Third-party Bluetooth accessories (Logitech MX mice and keyboards, Keychron and others that report
+        // battery) only show up as "Accessory Source" power sources, which the public IOPSCopyPowerSourcesInfo()
+        // leaves out. The private IOPSCopyPowerSourcesByType(0), what `pmset -g accps` uses, includes them.
+        // Looked up at run time, so a macOS without it just skips this.
+        if let sym = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "IOPSCopyPowerSourcesByType") {
+            typealias ByType = @convention(c) (Int32) -> Unmanaged<CFTypeRef>?
+            let byType = unsafeBitCast(sym, to: ByType.self)
+            if let info = byType(0)?.takeRetainedValue(),
+               let sources = IOPSCopyPowerSourcesList(info)?.takeRetainedValue() as? [CFTypeRef] {
+                let have = Set(list.compactMap { $0["name"] as? String })
+                for src in sources {
+                    guard let d = IOPSGetPowerSourceDescription(info, src)?.takeUnretainedValue() as? [String: Any],
+                          d[kIOPSTypeKey] as? String == "Accessory Source",
+                          let name = d[kIOPSNameKey] as? String,
+                          let cur = d[kIOPSCurrentCapacityKey] as? Int else { continue }
+                    let cat = ((d["Accessory Category"] as? String) ?? name).lowercased()
+                    let kind = cat.contains("mouse") ? "mouse" : cat.contains("trackpad") ? "trackpad"
+                             : cat.contains("keyboard") ? "keyboard" : nil
+                    guard let kind, !have.contains(Stats.shortName(name)) else { continue }   // audio is handled below
+                    list.append(["name": Stats.shortName(name), "kind": kind, "level": cur,
+                                 "charging": (d[kIOPSIsChargingKey] as? Bool) ?? false])
+                }
+            }
+        }
+
         // AirPods and other audio devices: system_profiler reports per-bud levels.
         if let data = Stats.run("/usr/sbin/system_profiler", ["SPBluetoothDataType", "-json"]),
            let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let bt = (root["SPBluetoothDataType"] as? [[String: Any]])?.first,
            let connected = bt["device_connected"] as? [[String: Any]] {
+            let listed = Set(list.compactMap { $0["name"] as? String })
             for entry in connected {
                 for (name, value) in entry {
-                    guard let d = value as? [String: Any] else { continue }
+                    // Skip devices already listed above (a keyboard can also get a Main level here).
+                    guard let d = value as? [String: Any], !listed.contains(Stats.shortName(name)) else { continue }
                     func pct(_ k: String) -> Int? {
                         (d[k] as? String).flatMap { Int($0.replacingOccurrences(of: " %", with: "").replacingOccurrences(of: "%", with: "")) }
                     }
