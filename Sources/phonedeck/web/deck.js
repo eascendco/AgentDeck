@@ -2063,13 +2063,16 @@
         });
       }
       if (tab === 'apps') {
-        var f = (filter || '').toLowerCase(), n = 0;
+        // Every app on modern devices (icons load as they scroll into view). An iPhone 4S gets the first
+        // 80 and a pointer to search: hundreds of icons at once are too much for it.
+        var f = (filter || '').toLowerCase(), n = 0, cap = PD.modern ? 1e9 : 80, more = 0;
         if (!f || 'claude'.indexOf(f) >= 0) html.push('<div class="ga row" data-add="c:"><span class="gi" style="background:#d97757;color:#fff">' + icon(G.waveform) + '</span><span>Talk to Claude</span></div>');
         each(PD.launcher.all, function (a) {
           if (f && a.name.toLowerCase().indexOf(f) < 0) return;
-          if (n++ > 60) return;
-          html.push('<div class="ga row" data-add="p:' + esc(a.path) + '"><img src="' + esc(PD.iconUrl(a.path)) + '"><span>' + esc(a.name) + '</span></div>');
+          if (n++ >= cap) { more++; return; }
+          html.push('<div class="ga row" data-add="p:' + esc(a.path) + '"><img loading="lazy" src="' + esc(PD.iconUrl(a.path)) + '"><span>' + esc(a.name) + '</span></div>');
         });
+        if (more) html.push('<div class="empty" style="padding:12px 16px">' + more + ' more: type in Search apps to find them.</div>');
       }
       body.innerHTML = html.join('');
     }
