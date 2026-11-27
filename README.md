@@ -51,7 +51,7 @@ for asking the `claude` CLI for its usage.
 
 ## What's new in version 2
 
-The Mac side is now **PhoneDeck.app**, a menu bar app with a **Command Center** window where you design each deck:
+The Mac side is now **AgentDeck.app**, a menu bar app with a **Command Center** window where you design each deck:
 drag apps, widgets and controls onto pages for an iPhone 4S, a modern iPhone and an iPad, each with its own layout.
 Coming from version 1? See [Upgrading from version 1](#upgrading-from-version-1).
 
@@ -81,11 +81,15 @@ Coming from version 1? See [Upgrading from version 1](#upgrading-from-version-1)
 git clone https://github.com/eascendco/AgentDeck.git
 cd AgentDeck
 ./make-app.sh
-open PhoneDeck.app
+open /Applications/AgentDeck.app
 ```
 
-`make-app.sh` builds **PhoneDeck.app** and signs it with a local certificate it creates in `~/.phonedeck`, so macOS keeps
-its permissions across rebuilds. Move the app to /Applications if you like; running `make-app.sh` again updates it there.
+`make-app.sh` builds **AgentDeck.app**, installs it in /Applications and signs it with a local certificate it creates in
+`~/.phonedeck`, so macOS keeps its permissions across updates. After a `git pull`, run `make-app.sh` again: it quits the
+running app and replaces it. Turn on **Open at Login** in the menu bar icon's menu to keep it running.
+
+The deck uses port 8045 (and 8047 for HTTPS). To use another, put the number in `~/.phonedeck/port`, for example
+`echo 9045 > ~/.phonedeck/port`, then quit and reopen AgentDeck.
 
 Then click the menu bar icon → **Connect a Device…**:
 
@@ -107,7 +111,7 @@ If that shows an error page, the menu bar icon → **Show Log** says what went w
 
 | Permission | Why |
 |---|---|
-| **Local Network** | Lets the phones reach PhoneDeck over Wi-Fi |
+| **Local Network** | Lets the phones reach AgentDeck over Wi-Fi |
 | **Accessibility** | Dock badges, window tiling, media keys, pressing Return in Claude |
 | **Automation** (Music, Spotify, Chrome, Safari, Notes…) | Now playing, YouTube, Apple Notes |
 | **Calendars** | The calendar widget |
@@ -122,11 +126,11 @@ swift build -c release
 .build/release/phonedeck --help
 ```
 
-Permissions then go to your terminal app instead of PhoneDeck.
+Permissions then go to your terminal app instead of AgentDeck.
 
 ## Upgrading from version 1
 
-- The app is now PhoneDeck.app (`./make-app.sh`); the old `oldphonedeck` command is gone.
+- The app is now AgentDeck.app (`./make-app.sh`); the old `oldphonedeck` command is gone.
 - Settings live in `~/.phonedeck` instead of `~/.oldphonedeck`, so you'll pick your apps again and get a new access code.
 - Modern iPhones: install the new **PhoneDeck** profile and trust **PhoneDeck CA**. You can remove the old OldPhoneDeck profile in Settings → General → VPN & Device Management.
 - Add the deck to your Home Screen again from the new link.
@@ -134,7 +138,7 @@ Permissions then go to your terminal app instead of PhoneDeck.
 ## How it works
 
 ```
-iPhone / iPad (Safari, or PhoneCam on a 4S)     Mac: PhoneDeck.app (Swift, no dependencies)
+iPhone / iPad (Safari, or PhoneCam on a 4S)     Mac: AgentDeck.app (Swift, no dependencies)
 ┌───────────────────────────┐  Wi-Fi / hotspot ┌────────────────────────────────────────────────┐
 │ deck page (ES5 JavaScript │ ───────────────▶ │ :8045 HTTP   deck, Command Center, API          │
 │  so iOS 8/9 can run it)   │                  │ :8046        PhoneCam camera + mic              │

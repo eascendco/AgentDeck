@@ -19,6 +19,11 @@ struct Options {
     var city: String?                      // weather location (default: from the Mac's time zone)
 
     init(_ args: [String]) {
+        // A saved port (one number in ~/.phonedeck/port) for the app opened from Finder or at login; --port wins.
+        let saved = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".phonedeck/port")
+        if let p = (try? String(contentsOf: saved, encoding: .utf8)).flatMap({ UInt16($0.trimmingCharacters(in: .whitespacesAndNewlines)) }) {
+            port = p
+        }
         var it = args.dropFirst().makeIterator()
         while let a = it.next() {
             switch a {
@@ -36,7 +41,7 @@ struct Options {
             case "-h", "--help":
                 print("""
                 phonedeck — use an old iPhone as a second monitor + app launcher
-                  --port N          HTTP port (default 8045)
+                  --port N          HTTP port (default 8045, or the number in ~/.phonedeck/port)
                   --screen          also act as a second monitor (virtual display + stream)
                   --size WxH        virtual display size (default 960x640)
                   --hidpi           Retina mode (desktop looks like WxH points at 2x)
@@ -105,7 +110,7 @@ app.setActivationPolicy(.accessory)
 var virtualDisplay: VirtualDisplay?
 var displayID = CGMainDisplayID()
 if opts.screen && opts.virtual {
-    guard let vd = VirtualDisplay(name: "iPhone 4S (PhoneDeck)", width: UInt32(opts.width),
+    guard let vd = VirtualDisplay(name: "iPhone 4S (AgentDeck)", width: UInt32(opts.width),
                                   height: UInt32(opts.height), hiDPI: opts.hiDPI) else {
         print("Could not create the virtual display (private CGVirtualDisplay API refused). Try --mirror-main.")
         exit(1)
@@ -170,7 +175,7 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
         guard let der = LocalTLS.caCertificate() else {
             // A page, not a broken download: iOS would only say "Invalid Profile".
             let page = "<meta name=viewport content='width=device-width'><body style='font:17px -apple-system;padding:24px'>"
-                + "<h3>PhoneDeck couldn't create its certificate</h3><p>PhoneDeck's log on your Mac (menu bar icon › Show Log) says why.</p>"
+                + "<h3>AgentDeck couldn't create its certificate</h3><p>AgentDeck's log on your Mac (menu bar icon › Show Log) says why.</p>"
             return conn.respond(500, "text/html; charset=utf-8", Data(page.utf8))
         }
         if req.path == "/phonedeck-ca.cer" { return conn.respond(200, "application/x-x509-ca-cert", der) }
@@ -192,7 +197,7 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
             "PayloadType": "Configuration", "PayloadVersion": 1,
             "PayloadIdentifier": "com.phonedeck.ca", "PayloadUUID": uuid(1),
             "PayloadDisplayName": "PhoneDeck", "PayloadOrganization": "PhoneDeck",
-            "PayloadDescription": "Lets this iPhone open PhoneDeck on your Mac over HTTPS (needed for camera, mic and voice).",
+            "PayloadDescription": "Lets this iPhone open AgentDeck on your Mac over HTTPS (needed for camera, mic and voice).",
             "PayloadContent": [cert],
         ]
         let data = (try? PropertyListSerialization.data(fromPropertyList: profile, format: .xml, options: 0)) ?? Data()
@@ -487,7 +492,7 @@ let routes: (HTTPRequest, HTTPConnection) -> Void = { req, conn in
         conn.respond(404, text: "not found")
     }
 }
-server.advertise(name: "PhoneDeck on \(Host.current().localizedName ?? "Mac")", type: "_phonedeck._tcp")
+server.advertise(name: "AgentDeck on \(Host.current().localizedName ?? "Mac")", type: "_phonedeck._tcp")
 server.start(routes)
 // The iPhone 4S over a USB cable, with no Wi-Fi (see USBTunnel.swift): deck on the HTTP port, camera/mic on port + 1.
 USBTunnel.start(ports: [opts.port, opts.port + 1])

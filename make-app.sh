@@ -1,12 +1,14 @@
 #!/bin/sh
-# Builds PhoneDeck.app: the same server, launched as its own (menu bar) app so macOS
-# privacy prompts (Calendar, Automation, Accessibility) are asked for PhoneDeck itself.
+# Builds AgentDeck.app and installs it in /Applications: the same server, launched as its own (menu bar)
+# app so macOS privacy prompts (Calendar, Automation, Accessibility) are asked for AgentDeck itself.
+# Run it again after pulling changes; it replaces the app in place. APP=path ./make-app.sh builds elsewhere.
 set -e
 cd "$(dirname "$0")"
 swift build -c release
-# Rebuild in place if PhoneDeck was moved to /Applications.
-APP=PhoneDeck.app
-[ -d /Applications/PhoneDeck.app ] && APP=/Applications/PhoneDeck.app
+APP="${APP:-/Applications/AgentDeck.app}"
+case "$APP" in *.app) ;; *) echo "APP must end in .app"; exit 1 ;; esac
+# Quit a running copy first so the new one can take its ports.
+pkill -x phonedeck 2>/dev/null && sleep 1 || true
 rm -rf "$APP" && mkdir -p "$APP/Contents/MacOS"
 BIN="$(swift build -c release --show-bin-path)"
 cp "$BIN/phonedeck" "$APP/Contents/MacOS/phonedeck"
@@ -34,35 +36,38 @@ else:
 open(path, 'wb').write(data)
 print('fixed UUID in %d slice(s)' % done)
 PY
-# The web files stay in the build folder (linked, not copied): `swift build -c release` updates the
-# deck and Command Center without changing the app's signature, so macOS keeps its permissions.
+# The web files and plugins are copied in, so the app keeps working if this folder moves or is cleaned.
+# Re-signing below with the same certificate keeps macOS's permissions across updates.
 mkdir -p "$APP/Contents/Resources"
-ln -s "$BIN/PhoneDeck_phonedeck.bundle" "$APP/Contents/Resources/PhoneDeck_phonedeck.bundle"
-cp PhoneDeck.icns "$APP/Contents/Resources/PhoneDeck.icns"
+ditto "$BIN/PhoneDeck_phonedeck.bundle" "$APP/Contents/Resources/PhoneDeck_phonedeck.bundle"
+cp AgentDeck.icns "$APP/Contents/Resources/AgentDeck.icns"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
   <key>CFBundleIdentifier</key><string>com.phonedeck.server</string>
-  <key>CFBundleName</key><string>PhoneDeck</string>
+  <key>CFBundleName</key><string>AgentDeck</string>
+  <key>CFBundleDisplayName</key><string>AgentDeck</string>
   <key>CFBundleExecutable</key><string>phonedeck</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.1</string>
-  <key>CFBundleIconFile</key><string>PhoneDeck</string>
+  <key>CFBundleIconFile</key><string>AgentDeck</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSUIElement</key><true/>
-  <key>NSLocalNetworkUsageDescription</key><string>Lets your iPhone and iPad decks connect to PhoneDeck on this Mac over Wi-Fi.</string>
+  <key>NSLocalNetworkUsageDescription</key><string>Lets your iPhone and iPad decks connect to AgentDeck on this Mac over Wi-Fi.</string>
   <key>NSBonjourServices</key><array><string>_phonedeck._tcp</string></array>
   <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
-  <key>NSCalendarsFullAccessUsageDescription</key><string>Shows your upcoming events on the PhoneDeck dashboard.</string>
-  <key>NSAppleEventsUsageDescription</key><string>Reads now playing and toggles dark mode for the PhoneDeck dashboard.</string>
+  <key>NSCalendarsFullAccessUsageDescription</key><string>Shows your upcoming events on the AgentDeck dashboard.</string>
+  <key>NSAppleEventsUsageDescription</key><string>Reads now playing and toggles dark mode for the AgentDeck dashboard.</string>
 </dict></plist>
 PLIST
 # Sign with a stable local identity (self-signed, kept in its own keychain file under ~/.phonedeck).
 # macOS ties Accessibility / Full Disk Access to the signature: an ad-hoc signature changes with every
 # build and loses them, a fixed certificate keeps them across rebuilds. Nothing is added to your login keychain.
 KC="$HOME/.phonedeck/signing.keychain-db"; KCPW="phonedeck-local-signing"; ID="PhoneDeck Local Signing"
-if [ ! -f "$KC" ]; then
+# /usr/bin/openssl (LibreSSL) on purpose: OpenSSL 3 from Homebrew writes .p12 files macOS can't import.
+if ! security find-identity -p codesigning "$KC" 2>/dev/null | grep -q "$ID"; then
+  [ -f "$KC" ] && security delete-keychain "$KC"
   T="$(mktemp -d)"
   cat > "$T/cert.cnf" <<'CNF'
 [req]
@@ -75,8 +80,8 @@ keyUsage = critical, digitalSignature
 extendedKeyUsage = critical, codeSigning
 basicConstraints = critical, CA:false
 CNF
-  openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -config "$T/cert.cnf" -extensions ext -keyout "$T/key.pem" -out "$T/cert.pem" 2>/dev/null
-  openssl pkcs12 -export -inkey "$T/key.pem" -in "$T/cert.pem" -name "$ID" -out "$T/id.p12" -passout pass:"$KCPW" 2>/dev/null
+  /usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -config "$T/cert.cnf" -extensions ext -keyout "$T/key.pem" -out "$T/cert.pem" 2>/dev/null
+  /usr/bin/openssl pkcs12 -export -inkey "$T/key.pem" -in "$T/cert.pem" -name "$ID" -out "$T/id.p12" -passout pass:"$KCPW" 2>/dev/null
   security create-keychain -p "$KCPW" "$KC"
   security set-keychain-settings "$KC"
   security unlock-keychain -p "$KCPW" "$KC"
@@ -86,4 +91,4 @@ CNF
 fi
 security unlock-keychain -p "$KCPW" "$KC"
 codesign --force --keychain "$KC" -s "$ID" "$APP"
-echo "Built $APP"
+echo "Installed $APP"

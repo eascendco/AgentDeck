@@ -86,8 +86,8 @@ final class MenuBar: NSObject, NSMenuDelegate {
     private func updateIcon() {
         let connected = DeckDevice.allCases.filter { $0.status.connected }
         item.button?.image = NSImage(systemSymbolName: connected.isEmpty ? "square.grid.2x2" : "square.grid.2x2.fill",
-                                     accessibilityDescription: "PhoneDeck")
-        item.button?.toolTip = connected.isEmpty ? "PhoneDeck" : "PhoneDeck · " + connected.map(\.name).joined(separator: ", ")
+                                     accessibilityDescription: "AgentDeck")
+        item.button?.toolTip = connected.isEmpty ? "AgentDeck" : "AgentDeck · " + connected.map(\.name).joined(separator: ", ")
     }
 
     // Rebuilt every time it opens, so device status and checkmarks are current.
@@ -112,7 +112,7 @@ final class MenuBar: NSObject, NSMenuDelegate {
         }
         menu.addItem(.separator())
         add(menu, "Show Log", #selector(showLog))
-        menu.addItem(withTitle: "Quit PhoneDeck", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: "Quit AgentDeck", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
     }
 
     @discardableResult
@@ -149,16 +149,16 @@ enum MainMenu {
         let main = NSMenu()
         let cc = CommandCenter.shared
 
-        let appMenu = submenu(main, "PhoneDeck")
-        appMenu.addItem(withTitle: "About PhoneDeck", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let appMenu = submenu(main, "AgentDeck")
+        appMenu.addItem(withTitle: "About AgentDeck", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
         item(appMenu, "Connect a Device…", #selector(ConnectWindow.showFromMenu(_:)), target: ConnectWindow.shared)
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Hide PhoneDeck", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: "Hide AgentDeck", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         item(appMenu, "Hide Others", #selector(NSApplication.hideOtherApplications(_:)), key: "h", mods: [.command, .option])
         appMenu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Quit PhoneDeck", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit AgentDeck", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
         let file = submenu(main, "File")
         item(file, "New Page", #selector(CommandCenter.newPage(_:)), key: "n", target: cc)

@@ -3,5 +3,6 @@
 *.xcodeproj
 .DS_Store
 PhoneDeck.app/
+AgentDeck.app/
 PhoneCam/build/
 PhoneCam/.sdk/

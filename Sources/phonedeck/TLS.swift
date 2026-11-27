@@ -39,7 +39,7 @@ enum LocalTLS {
             }
             guard let der, valid(der) else {
                 throw NSError(domain: "phonedeck.tls", code: -2, userInfo: [NSLocalizedDescriptionKey:
-                    "the certificate in \(dir.path) is damaged. Quit PhoneDeck, delete that folder and start it again"])
+                    "the certificate in \(dir.path) is damaged. Quit AgentDeck, delete that folder and start it again"])
             }
             return der
         } catch {
